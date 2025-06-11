@@ -7,12 +7,36 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score, accuracy_score, classification_report
 
+
+# Page config
 st.set_page_config(page_title="PredictaBaby", layout="centered")
 
-st.markdown("""👶🏽 
-# PredictaBaby
-### "Smart Insights for Little Lungs."
-""")
+# Session state to track when assessment starts
+if 'assessment_started' not in st.session_state:
+    st.session_state.assessment_started = False
+if 'baby_name' not in st.session_state:
+    st.session_state.baby_name = None
+
+# Welcome Page
+if not st.session_state.assessment_started:
+    st.markdown("""
+    # 👶🏽 Welcome to PredictaBaby
+    Smart Insights for Little Lungs.
+    
+    Please enter your baby's name to begin the risk assessment.
+    """)
+
+    baby_name = st.text_input("👶 Baby's Name")
+    if st.button("Start Assessment"):
+        if baby_name.strip():
+            st.session_state.baby_name = baby_name.strip().title()
+            st.session_state.assessment_started = True
+        else:
+            st.warning("Please enter the baby's name to proceed.")
+
+    st.stop()  # Stop here until Start Assessment is clicked
+
+# st.set_page_config(page_title="PredictaBaby", layout="centered")
 
 st.markdown("""
 <style>
@@ -144,6 +168,8 @@ respiratory_rate = st.sidebar.number_input('Respiratory rate', 15, 60, 30)
 temperature = st.sidebar.number_input('Temperature (°C)', 35.0, 39.0, 37.0)
 spo2 = st.sidebar.number_input('SpO₂ (%)', 85.0, 100.0, 96.0)
 
+st.sidebar.markdown(f"👶 *Baby:* {st.session_state.get('baby_name', 'Not entered')}")
+
 submitted = st.sidebar.button("🔍 Predict Risk")
 
 if submitted:
@@ -170,7 +196,7 @@ if submitted:
     input_scaled = scaler.transform(input_df)
     risk_prob = model.predict_proba(input_scaled)[0, 1]
 
-    st.subheader("🧠 Model Prediction")
+    st.subheader(f"🧠 Model Prediction for Baby {st.session_state.baby_name}'s Assessment")
     st.write(f"Likelihood of asthma: *{risk_prob * 100:.1f}%*")
 
     if risk_prob > 0.5:
@@ -197,6 +223,7 @@ if submitted:
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(200, 10, txt=f"Generated on: {now}", ln=True)
+    pdf.cell(200, 10, txt=f"Baby's Name: {st.session_state.baby_name}", ln=True)
     pdf.ln(5)
 
     # Input Summary Table
